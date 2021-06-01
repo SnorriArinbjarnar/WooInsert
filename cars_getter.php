@@ -33,8 +33,8 @@ function getCars($tokenIn){
 }
 
 
-function insertIntoWoo(){
-    $token = new Tokenizer('car1', API_USERNAME, API_PASSWORD);
+function insertIntoWoo($user, $pwd, $name){
+    $token = new Tokenizer($name, $user, $pwd);
     $newToken = $token->get_token();
     $params = array();
 
@@ -45,6 +45,15 @@ function insertIntoWoo(){
 
     insert_data($obj, $params);
              
+}
+
+function insertMultipleIntoWoo(){
+    $dealers = unserialize(SITE_DEALERS);
+    $count = 0;
+    foreach ($dealers as $dealer){
+        insertIntoWoo($dealer['username'], $dealer['pwd'], 'car' . $count);
+        $count++;
+    };
 }
         
 function construct_meta_values_xml($obj, $headers){
@@ -67,15 +76,16 @@ function insert_car($car, $csv_obj){
         
     $meta_inp = construct_meta_values_xml($car, $csv_obj);
     $meta_inp["DEALER"] = $car["DEALER"];
-
+    
     if (car_exists($car)){
        
         $args = array(
+            
             'ID' => $car['ID'],
-            'post_title' => $car['EXT_MODFRAMLEIDANDI'] . '-' . $car['ID'],
+            'post_title' => $car['EXT_MODFRAMLEIDANDI'] . '-' . $car['ID'] . '-' . $car['DEALER'],
             'post_type' => 'product',
             'post_status' => 'publish',
-            'post_name' => $car['ID'],
+            'post_name' => $car['EXT_MODFRAMLEIDANDI'] . '-' . $car['ID'] . '-' . $car['DEALER'],
             'post_content' => "",
         );
         
@@ -95,8 +105,8 @@ function insert_car($car, $csv_obj){
             'import_id' => $car['ID'],
             'post_type' => 'product',
             'post_status' => 'publish',
-            'post_title' => $car['EXT_MODFRAMLEIDANDI'] . '-' . $car['ID'],
-            'post_name' => $car['ID'],
+            'post_title' => $car['EXT_MODFRAMLEIDANDI'] . '-' . $car['ID'] . '-' . $car['DEALER'],
+            'post_name' => $car['ID'] . '-' . $car['DEALER'],
             'post_content' => '',
         );
         echo 'inserting post';
@@ -121,7 +131,7 @@ function insert_data($cars, $csv_obj){
              CRON
 ===================================
 */
-add_action('bl_cron_hook', 'insertIntoWoo');
+add_action('bl_cron_hook', 'insertMultipleIntoWoo');
 
 register_activation_hook(__FILE__, 'my_activation');
 function my_activation(){
@@ -137,12 +147,5 @@ function my_deactivation(){
 // Shortcode
 add_shortcode('token', 'tokenizer_token');
 function tokenizer_token(){
-    $token = new Tokenizer('car1', API_USERNAME, API_PASSWORD);
-    $newToken = $token->get_token();
-    $params = array();
-
-    $obj = getCars($newToken);
-    echo '<pre>';
-    print_r($obj);
-    echo '</pre>';
+    
 }
